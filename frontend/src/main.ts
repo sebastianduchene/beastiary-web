@@ -10,6 +10,10 @@ import vuetify from './plugins/vuetify';
 import router from './router';
 
 Vue.config.productionTip = false;
+Vue.config.errorHandler = (err, vm, info) => {
+  console.error('[Vue error]', err, info);
+  document.body.innerHTML = `<pre style="color:red;padding:20px">${err}\n\n${info}</pre>`;
+};
 
 Vue.use(VueWorker);
 
