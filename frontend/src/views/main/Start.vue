@@ -3,25 +3,13 @@
 </template>
 
 <script lang="ts">
-import { store } from '@/store';
-import { dispatchCheckLoggedIn } from '@/store/main/actions';
-import { readIsLoggedIn } from '@/store/main/getters';
 import { Component, Vue } from 'vue-property-decorator';
 
-const startRouteGuard = async (to, from, next) => {
-  await dispatchCheckLoggedIn(store);
-  if (readIsLoggedIn(store)) {
-    if (to.path === '/login' || to.path === '/') {
-      next('/main');
-    } else {
-      next();
-    }
-  } else if (readIsLoggedIn(store) === false) {
-    if (to.path === '/' || (to.path as string).startsWith('/main')) {
-      next({ path: '/login' });
-    } else {
-      next();
-    }
+const startRouteGuard = (to, from, next) => {
+  if (to.path === '/') {
+    next('/main/dashboard');
+  } else {
+    next();
   }
 };
 

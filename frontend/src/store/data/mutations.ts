@@ -47,6 +47,9 @@ export const mutations = {
         // https://vuex.vuejs.org/guide/mutations.html#mutations-follow-vue-s-reactivity-rules
         Vue.set(state.traces, payload.id, payload);
     },
+    setParsedTrace(state: DataState, payload: Trace) {
+        Vue.set(state.traces, payload.id, payload);
+    },
     setActiveTrace(state: DataState, payload: Trace) {
         state.traces[payload.id].isActive = true;
 
@@ -82,6 +85,7 @@ const {commit} = getStoreAccessors<DataState | any, State>('');
 
 export const commitSetTraces = commit(mutations.setTraces);
 export const commitSetTrace = commit(mutations.setTrace);
+export const commitAddParsedTrace = commit(mutations.setParsedTrace);
 export const commitSetActiveTrace = commit(mutations.setActiveTrace);
 export const commitSetSamples = commit(mutations.setSetSamples);
 export const commitSetActiveParams = commit(mutations.setActiveParams);

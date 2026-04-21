@@ -1,50 +1,36 @@
-import { api } from '@/api';
-import { Trace, TraceCreate } from '@/interfaces';
-import { AxiosResponse } from 'axios';
+import { Trace } from '@/interfaces';
+import { parseLogFile, readFileAsText } from '@/logParser';
 import { getStoreAccessors } from 'typesafe-vuex';
 import { ActionContext } from 'vuex';
-import { dispatchCheckApiError } from '../main/actions';
 import { commitAddNotification, commitRemoveNotification } from '../main/mutations';
 import { State } from '../state';
 import {
+    commitAddParsedTrace,
     commitSetActiveParams,
     commitSetActiveTrace,
     commitSetBurnIn,
     commitSetLoadingSamples,
-    commitSetSamples,
-    commitSetTrace,
-    commitSetTraces,
 } from './mutations';
 import { DataState } from './state';
 
 type MainContext = ActionContext<DataState, State>;
 
 export const actions = {
-    async actionGetTraces(context: MainContext) {
-        let response: AxiosResponse | null = null;
-        try {
-            response = await api.getTraces(context.rootState.main.token);
-        } catch (error) {
-            await dispatchCheckApiError(context, error);
-        }
-        if (response) {
-            commitSetTraces(context, response.data);
-        }
+    async actionGetTraces(_context: MainContext) {
+        // no-op: traces are loaded client-side via drag-and-drop
     },
-    async actionCreateTrace(context: MainContext, payload: TraceCreate) {
-        const loadingNotification = { content: 'saving', showProgress: true };
+    async actionCreateTrace(context: MainContext, file: File) {
+        const loadingNotification = { content: `Loading ${file.name}...`, showProgress: true };
         commitAddNotification(context, loadingNotification);
-        let response: AxiosResponse | null = null;
         try {
-            response = await api.createTrace(context.rootState.main.token, payload);
-        } catch (error) {
-            await dispatchCheckApiError(context, error);
+            const content = await readFileAsText(file);
+            const trace = parseLogFile(file, content);
+            commitAddParsedTrace(context, trace);
+            commitAddNotification(context, { content: `${file.name} loaded`, color: 'success' });
+        } catch (e) {
+            commitAddNotification(context, { content: `Error: ${(e as Error).message}`, color: 'error' });
         }
         commitRemoveNotification(context, loadingNotification);
-        if (response != null) {
-            commitSetTrace(context, response.data);
-            commitAddNotification(context, { content: 'Trace successfully created', color: 'success' });
-        }
     },
     async actionSetActiveTrace(context: MainContext, payload: Trace) {
         commitSetActiveTrace(context, payload);
@@ -52,33 +38,8 @@ export const actions = {
     async actionSetActiveParams(context: MainContext, payload: {traceID: number, params: string[]}) {
         commitSetActiveParams(context, payload);
     },
-    async actionGetSamples(
-        context: MainContext,
-        payload: {trace: Trace,
-            skip?: number,
-            limit?: number,
-            all?: boolean}) {
-        const trace = payload.trace;
-        const skip = payload.skip ? payload.skip : 0;
-        const limit = payload.limit ? payload.limit : 100;
-        const all = payload.all ? payload.all : false;
-        const loadingNotification = { content: 'Loading samples...', showProgress: true };
-        if (skip === 0) {
-            commitAddNotification(context, loadingNotification);
-        }
-        let response: AxiosResponse | null = null;
-        try {
-            response = await api.getSamples(context.rootState.main.token, trace, skip, limit);
-        } catch (error) {
-            await dispatchCheckApiError(context, error);
-        }
-        if (response != null) {
-            commitSetSamples(context, {traceID: trace.id, data: response.data});
-            if (all === true && response.data.length === limit) {
-                // if you get back what you request go again
-                await dispatchGetSamples(context, {trace, skip: skip + limit, limit, all: true});
-            }}
-        commitRemoveNotification(context, loadingNotification);
+    async actionGetSamples(_context: MainContext, _payload: any) {
+        // no-op: all samples are already in trace.parameters after parsing
     },
     async actionSetBurnIn(context: MainContext, payload: {traceID: number, burnIn: number}) {
         commitSetBurnIn(context, payload);

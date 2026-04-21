@@ -142,12 +142,9 @@
 import AddTraceButton from '@/components/data/AddTraceButton.vue';
 import ParamsPanel from '@/components/data/ParamsPanel.vue';
 import {
-  dispatchGetSamples,
-  dispatchGetTraces,
   dispatchSetActiveParams,
   dispatchSetActiveTrace,
   dispatchSetBurnIn,
-  dispatchSetLoadingSamples,
 } from '@/store/data/actions';
 import { readActiveTraceIDs, readLoadingSamples, readTraces } from '@/store/data/getters';
 import { Component, Vue } from 'vue-property-decorator';
@@ -162,7 +159,6 @@ export default class TraceList extends Vue {
   public activeTraces = [];
   public openTraceID = null;
   public show: boolean = true;
-  public interval?: number;
   // this is so dumb need a better way to do dynamic v-model defualts
   public burnIn = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10];
 
@@ -189,36 +185,9 @@ export default class TraceList extends Vue {
 
   public async setAcitveTrace(trace) {
     this.openTraceID = trace.id;
-    const skip =
-      'state' in trace.parameters ? trace.parameters.state.length : 0;
-    if (this.activeTraceIDs === [] || ( this.activeTraceIDs && !(this.activeTraceIDs.includes(trace.id)))) {
-      // have not loaded or just started or part way though loading
-      if (!readLoadingSamples(this.$store)) {
-        // not loading and no active so load
-        dispatchSetLoadingSamples(this.$store, {traceID: trace.id, loading: true});
-        await dispatchSetActiveTrace(this.$store, trace);
-        await dispatchGetSamples(this.$store, { trace, skip, limit: 2500, all: true });
-        dispatchSetLoadingSamples(this.$store, {traceID: trace.id, loading: false});
-        // await this.createInterval(trace);
-      }
-    }
+    await dispatchSetActiveTrace(this.$store, trace);
   }
 
-  public async mounted() {
-    await dispatchGetTraces(this.$store);
-    this.interval = setInterval( async () => {
-      for (const id of Object.keys(this.traces)) {
-        const trace = this.traces[id];
-        if (trace.isActive === true && !this.isLoading) {
-          const skip = 'state' in trace.parameters ? trace.parameters.state.length : 0;
-          await dispatchGetSamples(this.$store, {trace, skip, limit: 10000});
-          }
-        }
-      }, 5000);
-  }
-  public async beforeDestroy() {
-    clearInterval(this.interval);
-  }
   public fileName(path) {
     return path.substring(path.lastIndexOf('/') + 1);
   }
