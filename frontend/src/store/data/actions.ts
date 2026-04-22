@@ -6,6 +6,7 @@ import { commitAddNotification, commitRemoveNotification } from '../main/mutatio
 import { State } from '../state';
 import {
     commitAddParsedTrace,
+    commitReloadParsedTrace,
     commitSetActiveParams,
     commitSetActiveTrace,
     commitSetBurnIn,
@@ -32,6 +33,20 @@ export const actions = {
         }
         commitRemoveNotification(context, loadingNotification);
     },
+    async actionReloadTrace(context: MainContext, payload: {traceID: number, file: File}) {
+        const loadingNotification = { content: `Reloading ${payload.file.name}...`, showProgress: true };
+        commitAddNotification(context, loadingNotification);
+        try {
+            const content = await readFileAsText(payload.file);
+            const trace = parseLogFile(payload.file, content);
+            trace.id = payload.traceID;
+            commitReloadParsedTrace(context, trace);
+            commitAddNotification(context, { content: `${payload.file.name} reloaded`, color: 'success' });
+        } catch (e) {
+            commitAddNotification(context, { content: `Error: ${(e as Error).message}`, color: 'error' });
+        }
+        commitRemoveNotification(context, loadingNotification);
+    },
     async actionSetActiveTrace(context: MainContext, payload: Trace) {
         commitSetActiveTrace(context, payload);
     },
@@ -53,6 +68,7 @@ const { dispatch } = getStoreAccessors<DataState | any, State>('');
 
 export const dispatchGetTraces = dispatch(actions.actionGetTraces);
 export const dispatchCreateTrace = dispatch(actions.actionCreateTrace);
+export const dispatchReloadTrace = dispatch(actions.actionReloadTrace);
 export const dispatchSetActiveTrace = dispatch(actions.actionSetActiveTrace);
 export const dispatchGetSamples = dispatch(actions.actionGetSamples);
 export const dispatchSetActiveParams = dispatch(actions.actionSetActiveParams);

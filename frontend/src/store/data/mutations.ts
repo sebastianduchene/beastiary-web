@@ -50,6 +50,16 @@ export const mutations = {
     setParsedTrace(state: DataState, payload: Trace) {
         Vue.set(state.traces, payload.id, payload);
     },
+    reloadParsedTrace(state: DataState, payload: Trace) {
+        const existing = state.traces[payload.id];
+        const validActiveParams = existing.activeParams.filter(p => p in payload.parameters);
+        Vue.set(state.traces, payload.id, {
+            ...payload,
+            burnIn: existing.burnIn,
+            activeParams: validActiveParams.length ? validActiveParams : payload.activeParams,
+            isActive: existing.isActive,
+        });
+    },
     setActiveTrace(state: DataState, payload: Trace) {
         state.traces[payload.id].isActive = true;
 
@@ -86,6 +96,7 @@ const {commit} = getStoreAccessors<DataState | any, State>('');
 export const commitSetTraces = commit(mutations.setTraces);
 export const commitSetTrace = commit(mutations.setTrace);
 export const commitAddParsedTrace = commit(mutations.setParsedTrace);
+export const commitReloadParsedTrace = commit(mutations.reloadParsedTrace);
 export const commitSetActiveTrace = commit(mutations.setActiveTrace);
 export const commitSetSamples = commit(mutations.setSetSamples);
 export const commitSetActiveParams = commit(mutations.setActiveParams);

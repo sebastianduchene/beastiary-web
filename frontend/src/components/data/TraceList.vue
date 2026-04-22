@@ -1,4 +1,12 @@
 <template>
+  <div>
+    <input
+      ref="reloadFileInput"
+      type="file"
+      accept=".log,.txt"
+      style="display: none"
+      @change="onReloadFileInputChange"
+    />
     <v-list
       class="col mb-0 py-0 my-0 rounded-b-lg no-scrollbar"
       style="overflow-x: hidden;"
@@ -94,6 +102,9 @@
                   hide-details
                 ></v-slider>
                 <span class="fixed-width">{{burnIn[trace.id]}}</span>%
+                <v-btn icon small class="ml-2" title="Reload file" @click="openReloadPicker(trace.id)">
+                  <v-icon small>mdi-refresh</v-icon>
+                </v-btn>
               </div>
             </div>
             <v-divider class="my-0"></v-divider>
@@ -113,7 +124,7 @@
           <v-divider></v-divider>
           </v-list-group>
           </v-list>
-          
+  </div>
 </template>
 
 <style>
@@ -142,6 +153,7 @@
 import AddTraceButton from '@/components/data/AddTraceButton.vue';
 import ParamsPanel from '@/components/data/ParamsPanel.vue';
 import {
+  dispatchReloadTrace,
   dispatchSetActiveParams,
   dispatchSetActiveTrace,
   dispatchSetBurnIn,
@@ -159,6 +171,7 @@ export default class TraceList extends Vue {
   public activeTraces = [];
   public openTraceID = null;
   public show: boolean = true;
+  public reloadingTraceID: number | null = null;
   // this is so dumb need a better way to do dynamic v-model defualts
   public burnIn = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10];
 
@@ -190,6 +203,21 @@ export default class TraceList extends Vue {
 
   public fileName(path) {
     return path.substring(path.lastIndexOf('/') + 1);
+  }
+
+  public openReloadPicker(traceID: number) {
+    this.reloadingTraceID = traceID;
+    const input = this.$refs.reloadFileInput as HTMLInputElement;
+    input.value = '';
+    input.click();
+  }
+
+  public async onReloadFileInputChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file && this.reloadingTraceID !== null) {
+      await dispatchReloadTrace(this.$store, { traceID: this.reloadingTraceID, file });
+      this.reloadingTraceID = null;
+    }
   }
 }
 </script>
