@@ -1,16 +1,22 @@
-name: docs 
+name: docs
 on:
   push:
-    branches: 
+    branches:
       - master
       - main
+permissions:
+  contents: write
 jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-      - run: pip install mkdocs-material 
+      - run: pip install mkdocs-material
+      - run: git config --global user.name "GitHub Actions"
+      - run: git config --global user.email "actions@github.com"
       - run: mkdocs gh-deploy --force
